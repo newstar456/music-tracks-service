@@ -5,25 +5,11 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { X } from 'lucide-react';
 import Image from 'next/image';
+import {TrackForm, CreateModalProps} from '../types'
 
-interface CreateModalProps {
-  isOpen: boolean;
-  onRequestClose: () => void;
-  onTrackCreated: () => void;
-}
-interface TrackForm {
-  title: string;
-  artist: string;
-  album: string;
-  coverImage: string;
-  genres: string[];
-}
-// interface Genre {
-//   id: number;
-//   name: string;
-// }
 
 const isValidImageUrl = (url: string): boolean => { 
+  if(url === '/assets/images/music.jpg') return true;
   return /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp)$/i.test(url);
 };
 
@@ -35,17 +21,14 @@ const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) 
         title: '',
         artist: '',
         album: '',
-        coverImage: '',
+        coverImage: '/assets/images/music.jpg',
         genres: []
     });
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
     };
-    // const handleGenreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    //     const selected = Array.from(e.target.selectedOptions, (option) => option.value);
-    //     setSelectedGenres(selected);
-    // };
+
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -101,12 +84,9 @@ const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) 
   return (
     <Modal
         isOpen={isOpen}
-        // onAfterOpen={afterOpenModal}
         onRequestClose={onRequestClose}
         className="bg-white p-6 rounded-md shadow-lg max-w-xl mx-auto mt-20"
         ariaHideApp={false}
-        // style={customStyles}
-        // contentLabel="Example Modal"
       >
 
       <form className="min-w-[450px]" onSubmit={handleSubmit} data-testid="track-form">
@@ -130,18 +110,20 @@ const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) 
         </div>
         <div className="mb-6">
             <label htmlFor="coverImage" className="block mb-2 font-medium"> Cover Image URL: </label>
-            <input type="text" name="coverImage" className={`border rounded-sm w-full px-3 py-2 transition-all duration-200 ${error && !form.coverImage ? 'border-red-500' : 'border-gray-300' }`} data-testid="input-cover-image" value={form.coverImage} onChange={handleChange} placeholder='/assets/images/music.jpg'/>
+            <input type="text" name="coverImage" className={`border rounded-sm w-full px-3 py-2 transition-all duration-200 ${error && !form.coverImage ? 'border-red-500' : 'border-gray-300' }`} data-testid="input-cover-image" value='/assets/images/music.jpg' onChange={handleChange} placeholder='/assets/images/music.jpg'/>
             <div className="mt-4 flex justify-center">
                 <Image 
-                    src={ form.coverImage && isValidImageUrl(form.coverImage) ? form.coverImage  : "/assets/images/music.jpg" }
+                    src={ isValidImageUrl(form.coverImage) ? form.coverImage  : "/assets/images/music.jpg" }
                     width={300}
                     height={250}
                     alt="Cover Preview"
+                    unoptimized
                     className="h-40 w-auto object-cover rounded shadow-sm border"
                 />
             </div>
             {error && !isValidImageUrl(form.coverImage) && ( <p className="text-red-500 text-sm mt-1">Please enter a valid image URL.</p> )}
         </div>
+        
         <div className="mb-6">
           <label className="block mb-2 font-medium">Choose genres:</label>
             {selectedGenres.length > 0 && (
