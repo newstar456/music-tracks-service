@@ -9,10 +9,8 @@ import {Track, EditModalProps} from '../types'
 
 
 const isValidImageUrl = (url: string): boolean => { 
-    // console.log(url);
-  if(url == '/assets/images/music.jpg'){
-    return true;
-  } else return /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp)$/i.test(url);
+  if(url == '/assets/images/music.jpg') return true;
+  return /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp)$/i.test(url);
 };
 
 const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalProps) => {
@@ -23,7 +21,11 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
 
   useEffect(() => {
     if (!isOpen || !track) return;
-    setForm({ ...track });
+    setForm({
+        ...track,
+        coverImage: track.coverImage || '/assets/images/music.jpg',
+    });
+    setSelectedGenres(track.genres ?? []);
   }, [isOpen, track]);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
     const { name, value } = e.target;
     if (form) setForm(prev => prev ? { ...prev, [name]: value } : null);
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +59,9 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
     if (!isValidImageUrl(form.coverImage)) {
       setError('Please provide a valid image URL.');
       return;
+    }
+    if (!form.coverImage) {
+        setForm({ ...form, coverImage: '/assets/images/music.jpg'});
     }
 
     try {
@@ -69,7 +75,7 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
   };
 
   if (!form) return null;
-console.log(form.coverImage);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -104,7 +110,7 @@ console.log(form.coverImage);
           <input
             name="coverImage"
             type="text"
-            value='/assets/images/music.jpg'
+            value={form.coverImage }
             onChange={handleChange}
             className={`border rounded-sm w-full px-3 py-2 ${!isValidImageUrl(form.coverImage) ? 'border-red-500' : ''}`}
             // placeholder='/assets/images/music.jpg'

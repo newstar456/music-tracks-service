@@ -3,14 +3,16 @@ import Image from 'next/image';
 import {Track} from '../types';
 import api from '@/lib/api';
 
-const TrackCard = ({ track, onEdit, onAudioUpload, onUploadSuccess }: { track: Track; onEdit: (track: Track) => void; onAudioUpload: (track: Track) => void; onUploadSuccess: () => void }) => {
+const TrackCard = ({ track, onEdit, onAudioUpload }: { track: Track; onEdit: (track: Track) => void; onAudioUpload: (track: Track) => void }) => {
+  const API_BASE_URL = 'http://localhost:8000';
+  const audioUrl = `${API_BASE_URL}/api/files/${track.audioFile}`;
+
   return (
-    <div className="border rounded-lg p-4 shadow-sm relative group hover:shadow-md transition">
+    <div className="border rounded-lg p-4 shadow-sm relative group hover:shadow-md transition" >
       <Image
         width={300}
         height={200}
         src={'/assets/images/music.jpg'}
-        // src={track.coverImage || '/assets/images/music.jpg'}
         alt={track.title}
         unoptimized
         className="w-full h-48 object-cover rounded-md mb-3"
@@ -21,20 +23,21 @@ const TrackCard = ({ track, onEdit, onAudioUpload, onUploadSuccess }: { track: T
 
     {track.audioFile && (
         <div className="mt-4">
-            <audio controls className="w-full">
-            <source src={track.audioFile} type="audio/mpeg" />
-                Your browser does not support the audio element.
-            </audio>
-            <button
-                onClick={async () => {
-                    const updated = { ...track, audioFile: '' };
-                    await api.delete(`/tracks/${track.id}/file`, updated);
-                    // onUploadSuccess();
-                }}
-                className="text-sm text-red-500 mt-2 hover:underline"
-            >
+          <audio controls src={`${audioUrl}`} className="w-full"  />
+
+          <button
+              onClick={async () => {
+                  const updated = { ...track, audioFile: '' };
+                  await api.delete(`/tracks/${track.id}/file`, {
+                    data:updated,
+                  });
+                  // onUploadSuccess();
+              }}
+              className="text-sm text-red-500 mt-2 hover:underline"
+          >
             Remove audio
             </button>
+            
         </div>
     )}
       

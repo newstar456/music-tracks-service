@@ -8,7 +8,7 @@ import {AudioUploadProps} from '../types'
 
 const MAX_FILE_SIZE_MB = 10;
 
-const UploadAudioModal = ({ isOpen, onRequestClose, track, onUploadSuccess }: AudioUploadProps) => {
+const UploadAudioModal = ({ isOpen, onRequestClose, track }: AudioUploadProps) => {
 
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
@@ -41,6 +41,7 @@ const UploadAudioModal = ({ isOpen, onRequestClose, track, onUploadSuccess }: Au
 
     setError('');
     setFile(selected);
+    // console.log(selected);
   };
 
   const handleUpload = async () => {
@@ -65,9 +66,10 @@ const UploadAudioModal = ({ isOpen, onRequestClose, track, onUploadSuccess }: Au
           'Content-Type': 'multipart/form-data',
         },
       });
-          onUploadSuccess();
-          onRequestClose();
-        } catch (err) {
+
+
+        onRequestClose();
+    } catch (err) {
           console.error('Upload failed:', err);
           setError('Upload failed. Please try again.');
         } finally {

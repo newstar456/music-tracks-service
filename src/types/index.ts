@@ -32,5 +32,5 @@ export interface AudioUploadProps {
   isOpen: boolean;
   onRequestClose: () => void;
  track: Track | null;
-  onUploadSuccess: () => void;
+  onUploadSuccess: (updatedTrack:Track) => void;
 }

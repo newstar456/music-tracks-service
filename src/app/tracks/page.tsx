@@ -12,7 +12,7 @@ import UploadAudioModal from '@/components/UploadAudioModal';
 
 export default function TracksPage() {
 
-  const [tracks, setTracks] = useState([]);
+  const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -42,8 +42,13 @@ export default function TracksPage() {
     setAudioModalOpen(true);
   };
 
+  const handleUploadSuccess = (updatedTrack:Track) => {
+    setTracks((prev) => prev.map(track => (track.id === updatedTrack.id ? updatedTrack : track)));
+  };
+
+
   if (loading) return <Loader/>;
-  console.log(tracks);
+//   console.log(tracks);
 
   return (
     <div className="p-6 mx-0">
@@ -77,35 +82,17 @@ export default function TracksPage() {
               setTrackToUploadAudio(null);
             }}
             track={trackToUploadAudio}
-            onUploadSuccess={() => {
-              fetchTracks();
+            onUploadSuccess={(updatedTrack) => {
+              handleUploadSuccess(updatedTrack);
               setAudioModalOpen(false);
               setTrackToUploadAudio(null);
             }}
         />
 
       <ul>
-        {/* {tracks.map(track => (
-          <li key={track.id} data-testid={`track-item-${track.id}` } className="mb-3 px-6 py-8  bg-amber-100 rounded-md hover:bg-amber-200 ">
-          <div className='flex flex-row justify-between mb-4'>
-            <strong data-testid={`track-item-${track.id}-title`} className='text-lg'>{track.title}</strong> 
-            <span data-testid={`track-item-${track.album}-album`}>Album:{track.album}</span>
-            <span data-testid={`track-item-${track.id}-artist`}><span className='text-sm'>by{' '}</span> {track.artist}</span>
-          </div>
-          <div className='flex flex-row justify-between items-center'>
-            <ul>
-              {track.genres.map((genre) => (
-                <button key={genre} value={genre} className='bg-violet-500 focus:outline-none focus:ring text-white px-3 py-1 rounded-md mr-1 font-bold'>{genre}</button>
-              ))}
-            </ul>
-            <button onClick={() => openEdit(track)} className='bg-amber-700 focus:outline-none focus:ring text-white px-3 py-1 rounded-md mr-1 hover:cursor-pointer font-bold'>Edit</button>
-          </div>
-
-          </li>
-        ))} */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="tracks-header">
                 {tracks.map((track) => (
-                    <TrackCard key={track.id} track={track} onEdit={openEdit} onAudioUpload={onAudioUpload} onUploadSuccess={fetchTracks}/>
+                    <TrackCard key={track.id} track={track} onEdit={openEdit} onAudioUpload={onAudioUpload} />
                 ))}
             </div>
       </ul>
