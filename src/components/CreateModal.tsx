@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { X } from 'lucide-react';
 import Image from 'next/image';
 import {TrackForm, CreateModalProps} from '../types'
+import { useTrackStore } from '@/lib/stores/useTracksStore';
 
 
 const isValidImageUrl = (url: string): boolean => { 
@@ -13,10 +14,12 @@ const isValidImageUrl = (url: string): boolean => {
   return /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp)$/i.test(url);
 };
 
-const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) => {
+const CreateModal = ({isOpen, onRequestClose}:CreateModalProps) => {
 
+    const { fetchTracks } = useTrackStore();
     const [genres, setGenres] = useState<string[]>([]);
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+    const [error, setError] = useState('');
     const [form, setForm] = useState<TrackForm>({
         title: '',
         artist: '',
@@ -24,12 +27,12 @@ const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) 
         coverImage: '/assets/images/music.jpg',
         genres: []
     });
+  
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
     };
-
-    const [error, setError] = useState('');
 
     useEffect(() => {
         if (!isOpen) return;
@@ -43,6 +46,7 @@ const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) 
         };
         fetchGenres();
     }, [isOpen]);
+
     useEffect(() => {
         setForm((prev) => ({ ...prev, genres: selectedGenres }));
     }, [selectedGenres]);
@@ -73,7 +77,8 @@ const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) 
         await api.post('/tracks', payload);
         setForm({ title: '', artist: '', album: '', coverImage: '', genres: [] });
         setError('');
-        if (onTrackCreated) onTrackCreated();
+        await fetchTracks();
+        // if (onTrackCreated) onTrackCreated();
         if (onRequestClose) onRequestClose();
     } catch (err) {
       console.error('Error creating track:', err);
@@ -180,7 +185,7 @@ const CreateModal = ({isOpen, onRequestClose, onTrackCreated}:CreateModalProps) 
        
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onRequestClose} className="px-4 py-2 border rounded">Cancel</button>
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded" data-testid="submit-button">Submit</button>
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Submit</button>
         </div>
       </form>
 

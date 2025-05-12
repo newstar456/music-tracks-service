@@ -4,7 +4,10 @@ import Modal from 'react-modal';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { Upload } from 'lucide-react';
-import {AudioUploadProps} from '../types'
+import {AudioUploadProps} from '../types';
+import toast from 'react-hot-toast';
+import { useTrackStore } from '@/lib/stores/useTracksStore';
+
 
 const MAX_FILE_SIZE_MB = 10;
 
@@ -13,13 +16,14 @@ const UploadAudioModal = ({ isOpen, onRequestClose, track }: AudioUploadProps) =
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const { fetchTracks } = useTrackStore();
 
   useEffect(() => {
-  if (!track) {
-    setError('No track selected.');
-  } else {
-    setError('');
-  }
+    if (!track) {
+      setError('No track selected.');
+    } else {
+      setError('');
+    }
   }, [track]);
 
   if (!track) return null;
@@ -41,7 +45,6 @@ const UploadAudioModal = ({ isOpen, onRequestClose, track }: AudioUploadProps) =
 
     setError('');
     setFile(selected);
-    // console.log(selected);
   };
 
   const handleUpload = async () => {
@@ -66,26 +69,25 @@ const UploadAudioModal = ({ isOpen, onRequestClose, track }: AudioUploadProps) =
           'Content-Type': 'multipart/form-data',
         },
       });
-
-
-        onRequestClose();
+      toast.success('Audio uploaded successfully!');
+      await fetchTracks();
+      onRequestClose();
     } catch (err) {
-          console.error('Upload failed:', err);
-          setError('Upload failed. Please try again.');
-        } finally {
-          setIsUploading(false);
-        }
+      console.error('Upload failed:', err);
+      setError('Upload failed. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
   };
   return (
     <Modal isOpen={isOpen} onRequestClose={onRequestClose} className="bg-white p-6 rounded shadow max-w-md mx-auto mt-24" ariaHideApp={false} >
       <h2 className="text-lg font-semibold mb-4">Upload Audio File</h2>
 
-    <label htmlFor="fileInput"
-    className="flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm text-sm cursor-pointer hover:bg-gray-200 transition-colors">
+      <label htmlFor="fileInput" className="flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg shadow-sm text-sm cursor-pointer hover:bg-gray-200 transition-colors">
         <Upload size={16} />
         {file ? file.name : "Choose an audio file (.mp3 or .wav)"}
-    </label>
-      <input type="file" id="fileInput" name='fileInput' accept=".mp3,.wav" onChange={handleFileChange} className="hidden" data-testid={`upload-track-${track.id}`}/>
+      </label>
+      <input type="file" id="fileInput" name='fileInput' accept=".mp3,.wav" onChange={handleFileChange} className="hidden"/>
       
       {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 

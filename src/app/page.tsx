@@ -1,103 +1,175 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useEffect, useState } from 'react';
+import { useTrackStore, useTrackFilters } from '@/lib/stores/useTracksStore';
+import CreateModal from '@/components/CreateModal';
+import EditModal from '@/components/EditModal';
+import Loader from '@/components/Loader';
+import {Track} from '@/types'
+import TrackCard from '@/components/TrackCard';
+import UploadAudioModal from '@/components/UploadAudioModal';
+import { useDebouncedCallback } from 'use-debounce';
+
+
+export default function TracksPage() {
+
+  const { tracks, fetchTracks, loading } = useTrackStore();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [audioModalOpen, setAudioModalOpen] = useState(false);
+  const [trackToEdit, setTrackToEdit] = useState<Track | null>(null);
+  const [trackToUploadAudio, setTrackToUploadAudio] = useState<Track | null>(null);
+  const [highlightedTrackId, setHighlightedTrackId] = useState<number | null>(null);
+  const { setFilters, resetFilters, ...filters } = useTrackFilters();
+  const [inputValues, setInputValues] = useState({
+    search: filters.search,
+    genre: filters.genre,
+    artist: filters.artist,
+  });
+
+  const debouncedFetchTracks = useDebouncedCallback(() => {
+    setFilters({ ...inputValues });
+    fetchTracks({ ...filters, ...inputValues });
+  }, 500);
+
+  useEffect(() => {
+    fetchTracks({ ...filters });
+  }, [filters.sort, filters.order, filters.page]);
+
+  const openEdit = (track: Track) => {
+    setTrackToEdit(track);
+    setEditModalOpen(true);
+  };
+
+  const onAudioUpload = (track: Track) => {
+    setTrackToUploadAudio(track);
+    setAudioModalOpen(true);
+  };
+
+  const handleTrackHighlight = (id: number) => {
+    setHighlightedTrackId(id);
+    setTimeout(() => setHighlightedTrackId(null), 2000);
+  };
+
+
+  const handleInputChange = (field: keyof typeof inputValues) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValues((prev) => ({ ...prev, [field]: value }));
+    debouncedFetchTracks();       
+  };
+
+  const handleSelectChange = (field: 'sort' | 'order') => (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFilters({ [field]: e.target.value });
+    fetchTracks({ ...filters, [field]: e.target.value });
+  };
+
+  if (loading) return <Loader/>;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="p-6 mx-0">
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
+          onClick={() => setCreateModalOpen(true)}
+        >
+          Create Track
+        </button>
+        <CreateModal
+          isOpen={createModalOpen}
+          onRequestClose={() => setCreateModalOpen(false)} 
+        />
+        <EditModal
+          isOpen={editModalOpen}
+          onRequestClose={() => setEditModalOpen(false)}
+          track={trackToEdit}
+        />
+        <UploadAudioModal
+          isOpen={audioModalOpen}
+          onRequestClose={() => {
+            setAudioModalOpen(false);
+            setTrackToUploadAudio(null);
+          }}
+          track={trackToUploadAudio}
+          onUploadSuccess={() => {
+            setAudioModalOpen(false);
+            setTrackToUploadAudio(null);
+            if (trackToUploadAudio?.id) {
+              handleTrackHighlight(trackToUploadAudio.id);
+            }
+          }}
+        />
+      <div className="mb-6 flex flex-wrap items-center gap-4">
+        <div>
+          <label className="text-sm font-medium mr-2">Sort by:</label>
+          <select
+            value={filters.sort}
+            onChange={handleSelectChange('sort')}
+            className="border rounded p-1"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <option value="title">Title</option>
+            <option value="artist">Artist</option>
+            <option value="album">Album</option>
+            <option value="createdAt">Created At</option>
+          </select>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        <div>
+          <label className="text-sm font-medium mr-2">Order:</label>
+          <select
+            value={filters.order}
+            onChange={handleSelectChange('order')}
+            className="border rounded p-1"
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+
+        <div>
+          <input
+            type="text"
+            placeholder="Genre"
+            value={inputValues.genre}
+            onChange={handleInputChange('genre')}
+            className="border rounded p-1"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+        </div>
+
+        <div>
+          <input
+            type="text"
+            placeholder="Artist"
+            value={inputValues.artist}
+            onChange={handleInputChange('artist')}
+            className="border rounded p-1"
           />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        </div>
+
+        <button
+          onClick={resetFilters}
+          className="text-xs hover:cursor-pointer text-white px-4 py-2 rounded bg-blue-500 font-semibold"
         >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
+            Reset Filters
+        </button>
+
+        <div>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={inputValues.search}
+            onChange={handleInputChange('search')}
+            className="border rounded p-1"
           />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      </div>
+
+      <ul>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {tracks.map((track) => (
+            <TrackCard key={track.id} track={track} onEdit={openEdit} onAudioUpload={onAudioUpload} isHighlighted={highlightedTrackId === track.id}/>
+          ))}
+        </div>
+      </ul>
     </div>
   );
 }

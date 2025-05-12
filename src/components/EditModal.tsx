@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { X } from 'lucide-react';
 import Image from 'next/image';
 import {Track, EditModalProps} from '../types'
+import { useTrackStore } from '@/lib/stores/useTracksStore';
 
 
 const isValidImageUrl = (url: string): boolean => { 
@@ -13,11 +14,12 @@ const isValidImageUrl = (url: string): boolean => {
   return /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp)$/i.test(url);
 };
 
-const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalProps) => {
+const EditModal = ({ isOpen, onRequestClose, track }: EditModalProps) => {
   const [form, setForm] = useState<Track | null>(null);
   const [genres, setGenres] = useState<string[] | []>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const { fetchTracks } = useTrackStore();
 
   useEffect(() => {
     if (!isOpen || !track) return;
@@ -40,6 +42,7 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
     };
     fetchGenres();
   }, [isOpen]);
+
   useEffect(() => {
     setForm((prev) => prev ? { ...prev, genres: selectedGenres } : null);
   }, [selectedGenres]);
@@ -66,7 +69,7 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
 
     try {
       await api.put(`/tracks/${form.id}`, form);
-      onTrackUpdated();
+      await fetchTracks();
       onRequestClose();
     } catch (err) {
       console.error('Error updating track:', err);
@@ -86,25 +89,22 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
       <h2 className="text-xl font-semibold mb-4">Edit Track</h2>
 
       <form onSubmit={handleSubmit} className="min-w-[450px]">
-        {/* Title */}
+
         <div className="mb-4">
           <label className="block mb-1 font-medium">Title</label>
           <input name="title" type="text" value={form.title} onChange={handleChange} className="border rounded-sm w-full px-3 py-2" />
         </div>
 
-        {/* Artist */}
         <div className="mb-4">
           <label className="block mb-1 font-medium">Artist</label>
           <input name="artist" type="text" value={form.artist} onChange={handleChange} className="border rounded-sm w-full px-3 py-2" />
         </div>
 
-        {/* Album */}
         <div className="mb-4">
           <label className="block mb-1 font-medium">Album</label>
           <input name="album" type="text" value={form.album} onChange={handleChange} className="border rounded-sm w-full px-3 py-2" />
         </div>
 
-        {/* Cover */}
         <div className="mb-4">
           <label className="block mb-1 font-medium">Cover Image URL</label>
           <input
@@ -128,7 +128,6 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
           {error && !isValidImageUrl(form.coverImage) && <p className="text-red-500 text-sm mt-1">{error}</p>}
         </div>
 
-        {/* Genres */}
         <div className="mb-4">
           <label className="block mb-2 font-medium">Choose genres:</label>
             {selectedGenres.length > 0 && (
@@ -146,11 +145,7 @@ const EditModal = ({ isOpen, onRequestClose, onTrackUpdated, track }: EditModalP
                 ))}
               </div>
             )}
-            {/* <div className={`flex flex-wrap gap-2 p-3 border rounded-md transition-all duration-300 ${
-                error && selectedGenres.length === 0
-                ? 'border-red-500'
-                : 'border-gray-300'
-             }`}/> */}
+
             <div className="flex flex-wrap gap-2 p-3 border rounded-md">
                   {genres.map((genre) => {
                     const isSelected = selectedGenres.includes(genre);
