@@ -41,10 +41,13 @@ export interface AudioUploadProps {
 export type TrackStore = {
   tracks: Track[];
   loading: boolean;
+  totalPages: number;
   fetchTracks: (filters?: TrackFilters) => Promise<void>;
   deleteTrack: (id: number) => Promise<void>;
+  deleteTracks: (ids: number[]) => Promise<number[]>;
   setTracks: (tracks: Track[]) => void;
   setLoading: (loading: boolean) => void;
+  setTotalPages: (pages: number) => void;
 };
 
 export type SortField = 'title' | 'artist' | 'album' | 'createdAt';
@@ -57,6 +60,7 @@ export interface FiltersState {
   genre: string;
   artist: string;
   setFilters: (filters: Partial<FiltersState>) => void;
+  setPage: (page: number) => void;
   resetFilters: () => void;
 }
 

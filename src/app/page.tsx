@@ -9,28 +9,33 @@ import {Track} from '@/types'
 import TrackCard from '@/components/TrackCard';
 import UploadAudioModal from '@/components/UploadAudioModal';
 import { useDebouncedCallback } from 'use-debounce';
+import { SearchIcon } from 'lucide-react';
 
 
 export default function TracksPage() {
 
-  const { tracks, fetchTracks, loading } = useTrackStore();
+  const { tracks, fetchTracks, loading, totalPages } = useTrackStore();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [audioModalOpen, setAudioModalOpen] = useState(false);
   const [trackToEdit, setTrackToEdit] = useState<Track | null>(null);
   const [trackToUploadAudio, setTrackToUploadAudio] = useState<Track | null>(null);
   const [highlightedTrackId, setHighlightedTrackId] = useState<number | null>(null);
-  const { setFilters, resetFilters, ...filters } = useTrackFilters();
+  const { setFilters, resetFilters, setPage, ...filters } = useTrackFilters();
   const [inputValues, setInputValues] = useState({
     search: filters.search,
     genre: filters.genre,
     artist: filters.artist,
   });
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedTrackIds, setSelectedTrackIds] = useState<number[]>([]);
+  const [deleting, setDeleting] = useState(false);
+// console.log(filters);
 
   const debouncedFetchTracks = useDebouncedCallback(() => {
     setFilters({ ...inputValues });
     fetchTracks({ ...filters, ...inputValues });
-  }, 500);
+  }, 1000);
 
   useEffect(() => {
     fetchTracks({ ...filters });
@@ -146,13 +151,34 @@ export default function TracksPage() {
         </div>
 
         <button
-          onClick={resetFilters}
+          onClick={() => {
+            resetFilters();
+            setInputValues({
+              search: '',
+              genre: '',
+              artist: '',
+            });
+            fetchTracks({ page: 1, limit: 9, sort: 'title', order: 'asc', search: '', genre: '', artist: '' });
+          }}
           className="text-xs hover:cursor-pointer text-white px-4 py-2 rounded bg-blue-500 font-semibold"
         >
-            Reset Filters
+          Reset Filters
         </button>
+        <div className='relative'>
+          <SearchIcon size={16} className='absolute left-[8px] top-[8px]'/>
+          <input
+            type="search"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={e => {
+              setSearchTerm(e.target.value);
+              // setCurrentPage(1);
+            }}
+            className='py-1 pl-[32px] border'
+          />
+        </div>
 
-        <div>
+        {/* <div>
           <input
             type="text"
             placeholder="Search..."
@@ -160,16 +186,99 @@ export default function TracksPage() {
             onChange={handleInputChange('search')}
             className="border rounded p-1"
           />
-        </div>
-      </div>
+        </div> */}
 
+      </div>
+      {tracks.length > 0 && (
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={() =>
+              setSelectedTrackIds(tracks.map((track) => track.id))
+            }
+            className="bg-gray-300 px-3 py-1 rounded text-sm"
+          >
+            Select All
+          </button>
+
+          <button
+            onClick={() => setSelectedTrackIds([])}
+            className="bg-gray-300 px-3 py-1 rounded text-sm"
+          >
+            Clear Selection
+          </button>
+
+          <button
+            className="bg-red-600 text-white px-4 py-2 rounded mb-4"
+            onClick={async () => {
+              setDeleting(true);
+              try {
+                const failed = await useTrackStore.getState().deleteTracks(selectedTrackIds);
+                if (failed.length > 0) {
+                  alert(`Failed to delete ${failed.length} tracks.`);
+                }
+                setSelectedTrackIds([]);
+              } catch (err) {
+                console.error(err);
+                alert('An error occurred while deleting tracks.');
+              } finally {
+                setDeleting(false);
+              }
+            }}
+            disabled={deleting}
+            >
+            {deleting
+            ? 'Deleting...'
+            : `Delete Selected (${selectedTrackIds.length})`}
+          </button>
+        </div>
+      )}
       <ul>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 grid-rows-[306px]">
           {tracks.map((track) => (
-            <TrackCard key={track.id} track={track} onEdit={openEdit} onAudioUpload={onAudioUpload} isHighlighted={highlightedTrackId === track.id}/>
+            <div key={track.id} className="relative">
+              <input
+                type="checkbox"
+                className="absolute bottom-8 right-8 z-10"
+                checked={selectedTrackIds.includes(track.id)}
+                onChange={(e) => {
+                  setSelectedTrackIds((prev) =>
+                    e.target.checked
+                      ? [...prev, track.id]
+                      : prev.filter((id) => id !== track.id)
+                  );
+                }}
+              />
+              <TrackCard
+                track={track}
+                onEdit={openEdit}
+                onAudioUpload={onAudioUpload}
+                isHighlighted={highlightedTrackId === track.id}
+              />
+            </div>
           ))}
         </div>
       </ul>
+
+      <div className="mt-8 flex justify-center gap-4">
+        <button
+          disabled={filters.page === 1}
+          onClick={() => setPage(filters.page - 1)}
+          className={`px-4 py-2 rounded ${filters.page === 1 ? 'bg-gray-300' : 'bg-blue-500 text-white'}`}
+        >
+          Previous
+        </button>
+
+        <span className="px-4 py-2">Page {filters.page}</span>
+
+        <button
+          disabled={filters.page >= totalPages}
+          onClick={() => setPage(filters.page + 1)}
+          className={`px-4 py-2 rounded ${filters.page >= totalPages ? 'bg-gray-300' : 'bg-blue-500 text-white'}`}
+        >
+          Next
+        </button>
+      </div>
+
     </div>
   );
 }

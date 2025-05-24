@@ -33,7 +33,7 @@ const TrackCard = ({ track, onEdit, onAudioUpload, isHighlighted }: TrackCardPro
   };
 
   return (
-    <div className={clsx("border rounded-lg p-4 shadow-sm relative group hover:shadow-md transition", isHighlighted ? 'border-green-500 bg-green-50' : '')} >
+    <div className={clsx("border rounded-lg p-4 shadow-sm relative group hover:shadow-md transition h-full w-full", isHighlighted ? 'border-green-500 bg-green-50' : '')} >
       <Image
         width={300}
         height={200}
