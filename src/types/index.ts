@@ -5,7 +5,7 @@
   album: string;
   coverImage: string;
   genres: string[];
-  slug?:string,
+  slug:string,
   audioFile?: string;
 }
 
@@ -43,6 +43,8 @@ export type TrackStore = {
   loading: boolean;
   totalPages: number;
   fetchTracks: (filters?: TrackFilters) => Promise<void>;
+  createTrack: (newTrack: Partial<Track>) => Promise<void>;
+  editTrack: (id: number, updates: Partial<Track>) => Promise<void>;
   deleteTrack: (id: number) => Promise<void>;
   deleteTracks: (ids: number[]) => Promise<number[]>;
   setTracks: (tracks: Track[]) => void;
@@ -72,4 +74,10 @@ export type TrackFilters = {
   search?: string;
   genre?: string;
   artist?: string;
+};
+
+export type PaginationProps = {
+  totalPages: number;
+  currentPage: number;
+  onPageChange: (page:number) => void;
 };

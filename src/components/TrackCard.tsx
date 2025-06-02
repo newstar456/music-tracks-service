@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import { useTrackStore } from '@/lib/stores/useTracksStore';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+// import { fetchTracksFromServer, deleteTrackById } from '@/lib/api'; 
 
 
 const TrackCard = ({ track, onEdit, onAudioUpload, isHighlighted }: TrackCardProps) => {

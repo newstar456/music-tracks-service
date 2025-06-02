@@ -16,7 +16,7 @@ const isValidImageUrl = (url: string): boolean => {
 
 const CreateModal = ({isOpen, onRequestClose}:CreateModalProps) => {
 
-    const { fetchTracks } = useTrackStore();
+    const { fetchTracks, createTrack } = useTrackStore();
     const [genres, setGenres] = useState<string[]>([]);
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
     const [error, setError] = useState('');
@@ -66,15 +66,15 @@ const CreateModal = ({isOpen, onRequestClose}:CreateModalProps) => {
 
     const formData = new FormData(e.currentTarget);
     const payload = {
-      title: formData.get('title'),
-      artist: formData.get('artist'),
-      album: formData.get('album'),
-      cover: formData.get('cover-image'),
+      title: formData.get('title') as string,
+      artist: formData.get('artist') as string,
+      album: formData.get('album') as string,
+      coverImage: formData.get('cover-image') as string,
       genres: selectedGenres,
     };
 
     try {
-        await api.post('/tracks', payload);
+        createTrack(payload);
         setForm({ title: '', artist: '', album: '', coverImage: '', genres: [] });
         setError('');
         await fetchTracks();

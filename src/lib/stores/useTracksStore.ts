@@ -23,22 +23,70 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
       set({ loading: false });
     }
   },
+  createTrack: async (newTrack: Partial<Track>) => {
+  const prevTracks = get().tracks;
 
-  deleteTrack: async (id: number) => {
+  const tempId = Date.now();
+
+  const optimisticTrack = { ...newTrack, id: tempId } as Track;
+  set((state) => ({ tracks: [optimisticTrack, ...state.tracks] }));
+
+  try {
+    const res = await api.post('/tracks', newTrack);
+    const createdTrack = res.data.data;
+
+    set((state) => ({
+      tracks: state.tracks.map((track) =>
+        track.id === tempId ? createdTrack : track
+      ),
+    }));
+  } catch (err) {
+    console.error('Error creating track:', err);
+    set({ tracks: prevTracks });
+  }
+},
+  editTrack: async (id: number, updates: Partial<Track>) => { 
+    const prevTracks = get().tracks;
+    const updatedTracks = prevTracks.map((track) =>
+      track.id === id ? { ...track, ...updates } : track
+    );
+    set({ tracks: updatedTracks });
     try {
-      await api.delete(`/tracks/${id}`);
+      const res = await api.put(`/tracks/${id}`, updates);
+      const updatedTrack = res.data.data;
       set((state) => ({
-        tracks: state.tracks.filter((track) => track.id !== id),
+        tracks: state.tracks.map((track) =>
+          track.id === id ? updatedTrack : track
+        ),
       }));
     } catch (err) {
-      console.error('Error deleting track:', err);
+      console.error('Error updating track:', err);
+      set({ tracks: prevTracks });
     }
   },
 
+  deleteTrack: async (id: number) => {
+    const prevTracks = get().tracks;
+
+    set((state) => ({
+      tracks: state.tracks.filter((track) => track.id !== id),
+    }));
+
+    try {
+      await api.delete(`/tracks/${id}`);
+    } catch (err) {
+      console.error('Error deleting track:', err);
+      set({ tracks: prevTracks });
+    }
+  },
   deleteTracks: async (ids: number[]) => {
-    const { tracks } = get();
+    const prevTracks = get().tracks;
+    const remainingTracks = prevTracks.filter((track) => !ids.includes(track.id));
+
+    set({ tracks: remainingTracks });
+
     const failedIds: number[] = [];
-  
+
     for (const id of ids) {
       try {
         await api.delete(`/tracks/${id}`);
@@ -47,11 +95,14 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
         failedIds.push(id);
       }
     }
-  
-    set({
-      tracks: tracks.filter((track:Track) => !ids.includes(track.id) || failedIds.includes(track.id)),
-    });
-  
+
+    if (failedIds.length > 0) {
+      const restoredTracks = prevTracks.filter((track) => failedIds.includes(track.id));
+      set((state) => ({
+        tracks: [...state.tracks, ...restoredTracks],
+      }));
+    }
+
     return failedIds;
   },
 
@@ -64,17 +115,18 @@ export const useTrackStore = create<TrackStore>((set, get) => ({
 
 export const useTrackFilters = create<FiltersState>((set) => ({
   page: 1,
-  limit: 9,
+  limit: 10,
   sort: 'title',
   order: 'asc',
   search: '',
   genre: '',
   artist: '',
   setFilters: (filters) => set((state) => ({ ...state, ...filters })),
+  setSearch: (search: string) => set((state) => ({ ...state, search })),
   resetFilters: () =>
     set({
       page: 1,
-      limit: 9,
+      limit: 10,
       sort: 'title',
       order: 'asc',
       search: '',
